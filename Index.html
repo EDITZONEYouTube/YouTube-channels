@@ -1,1 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Channel Details</title>
+    <style>
+        /* Add CSS styling as needed */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f9f9f9;
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #cc0000;
+            padding: 20px;
+            background-color: #ffffff;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .container {
+            width: 80%;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        input[type="text"] {
+            width: calc(100% - 100px);
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-right: 10px;
+        }
+        
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            background-color: #cc0000;
+            color: #ffffff;
+            cursor: pointer;
+        }
+        
+        button:hover {
+            background-color: #b30000;
+        }
+        
+        #search-results {
+            margin-top: 20px;
+        }
+        
+        .result-item {
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid #ddd;
+            padding: 10px 0;
+        }
+        
+        .result-item img {
+            width: 80px;
+            height: 80px;
+            border-radius: 4px;
+            margin-right: 20px;
+        }
+        
+        .result-item h2 {
+            margin: 0;
+            font-size: 18px;
+            color: #333;
+        }
+        
+        .channel-details {
+            margin-top: 20px;
+        }
+        
+        .channel-banner {
+            width: 100%;
+            height: 200px;
+            background-size: cover;
+            background-position: center;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+        
+        .channel-info {
+            display: flex;
+            align-items: center;
+        }
+        
+        .channel-info img {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            margin-right: 20px;
+        }
+        
+        .video-list {
+            margin-top: 20px;
+        }
+        
+        .video-item {
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid #ddd;
+            padding: 10px 0;
+        }
+        
+        .video-item img {
+            width: 120px;
+            height: 90px;
+            border-radius: 4px;
+            margin-right: 20px;
+        }
+        
+        .video-item h3 {
+            margin: 0;
+            font-size: 18px;
+            color: #333;
+        }
+        
+        .video-item p {
+            margin: 5px 0;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <h1>YouTube Channel Details</h1>
+    <div class="container">
+        <input type="text" id="search-query" placeholder="Enter channel name">
+        <button onclick="searchChannel()">Search</button>
+        <div id="search-results"></div>
+        <div id="channel-details" class="channel-details"></div>
+    </div>
 
+    <script>
+        const apiKey = 'AIzaSyBbQ0YBt8VhwtTCnDeDRtguYtgUkybElro'; // Replace with your API key
+
+        function searchChannel() {
+            const query = document.getElementById('search-query').value;
+            fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=channel&q=${query}&key=${apiKey}`)
+                .then(response => response.json())
+                .then(data => {
+                    const resultsContainer = document.getElementById('search-results');
+                    resultsContainer.innerHTML = '';
+                    data.items.forEach(item => {
+                        const channel = item.snippet;
+                        const channelId = item.id.channelId;
+                        
+                        const resultItem = document.createElement('div');
+                        resultItem.className = 'result-item';
+                        
+                        const thumbnail = document.createElement('img');
+                        thumbnail.src = channel.thumbnails.default.url;
+                        thumbnail.alt = channel.title;
+                        resultItem.appendChild(thumbnail);
+                        
+                        const details = document.createElement('div');
+                        const title = document.createElement('h2');
+                        title.textContent = channel.title;
+                        details.appendChild(title);
+                        
+                        const viewButton = document.createElement('button');
+                        viewButton.textContent = 'View Details';
+                        viewButton.onclick = () => loadChannelDetails(channelId);
+                        details.appendChild(viewButton);
+                        
+                        resultItem.appendChild(details);
+                        resultsContainer.appendChild(resultItem);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error searching channel:', error);
+                    alert('An error occurred: ' + error.message);
+                });
+        }
+
+        function loadChannelDetails(channelId) {
+            fetch(`https://www.googleapis.com/youtube/v3/channels?part=brandingSettings,statistics,contentDetails&id=${channelId}&key=${apiKey}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (!data.items || !data.items.length) {
+                        throw new Error('No channel details found.');
+                    }
+                    const channel = data.items[0];
+                    const brandingSettings = channel.brandingSettings;
+                    const statistics = channel.statistics;
+
+                    const detailsContainer = document.getElementById('channel-details');
+                    detailsContainer.innerHTML = '';
+
+                    const bannerUrl = brandingSettings.image?.bannerExternalUrl || '';
+                    const banner = document.createElement('div');
+                    banner.className = 'channel-banner';
+                    banner.style.backgroundImage = `url('${bannerUrl}')`;
+                    detailsContainer.appendChild(banner);
+
+                    const thumbnailUrl = brandingSettings.image?.bannerImageUrl || '';
+                    const channelInfo = document.createElement('div');
+                    channelInfo.className = 'channel-info';
+                    const thumbnail = document.createElement('img');
+                    thumbnail.src = thumbnailUrl;
+                    thumbnail.alt = 'Channel Thumbnail';
+                    channelInfo.appendChild(thumbnail);
+                    
+                    const info = document.createElement('div');
+                    const title = document.createElement('h2');
+                    title.textContent = brandingSettings.channel?.title || 'No title available';
+                    info.appendChild(title);
+                    
+                    const subscriberText = document.createElement('p');
+                    subscriberText.textContent = `Subscribers: ${statistics.subscriberCount || 'N/A'}`;
+                    info.appendChild(subscriberText);
+                    
+                    const viewText = document.createElement('p');
+                    viewText.textContent = `Total Views: ${statistics.viewCount || 'N/A'}`;
+                    info.appendChild(viewText);
+                    
+                    const videoText = document.createElement('p');
+                    videoText.textContent = `Total Videos: ${statistics.videoCount || 'N/A'}`;
+                    info.appendChild(videoText);
+                    
+                    channelInfo.appendChild(info);
+                    detailsContainer.appendChild(channelInfo);
+
+                    // Load recent videos
+                    loadRecentVideos(channelId);
+                })
+                .catch(error => {
+                    console.error('Error fetching channel details:', error);
+                    alert('An error occurred: ' + error.message);
+                });
+        }
+
+        function loadRecentVideos(channelId) {
+            fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${channelId}&order=date&maxResults=5&key=${apiKey}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    const videoList = document.getElementById('channel-details');
+                    const videoContainer = document.createElement('div');
+                    videoContainer.className = 'video-list';
+                    data.items.forEach(item => {
+                        const video = item.snippet;
+                        const videoItem = document.createElement('div');
+                        videoItem.className = 'video-item';
+                        
+                        const thumbnail = document.createElement('img');
+                        thumbnail.src = video.thumbnails.default.url;
+                        thumbnail.alt = video.title;
+                        videoItem.appendChild(thumbnail);
+                        
+                        const details = document.createElement('div');
+                        const title = document.createElement('h3');
+                        title.textContent = video.title;
+                        details.appendChild(title);
+                        
+                        const description = document.createElement('p');
+                        description.textContent = video.description;
+                        details.appendChild(description);
+                        
+                        const link = document.createElement('a');
+                        link.href = `https://www.youtube.com/watch?v=${video.resourceId.videoId}`;
+                        link.textContent = 'Watch Video';
+                        link.target = '_blank'; // Opens link in a new tab
+                        details.appendChild(link);
+                        
+                        videoItem.appendChild(details);
+                        videoContainer.appendChild(videoItem);
+                    });
+                    videoList.appendChild(videoContainer);
+                })
+                .catch(error => {
+                    console.error('Error loading recent videos:', error);
+                    alert('An error occurred: ' + error.message);
+                });
+        }
+
+        // Optional: Auto-refresh subscriber count every 30 seconds
+        function refreshSubscriberCount(channelId) {
+            setInterval(() => {
+                loadChannelDetails(channelId);
+            }, 30000); // 30 seconds
+        }
+    </script>
+    <<script src="script.js"></script>
+</body>
+</html>
